@@ -660,6 +660,7 @@ void handleConfigure() {
   }
   form.replace("%HAS_PSU_CHECKED%", hasPSUchecked);
   
+  String options = "<option>5</option><option>10</option><option>15</option><option>20</option><option>30</option><option>60</option>";
   options.replace(">" + String(minutesBetweenDataRefresh) + "<", " selected>" + String(minutesBetweenDataRefresh) + "<");
   form.replace("%OPTIONS%", options);
 
