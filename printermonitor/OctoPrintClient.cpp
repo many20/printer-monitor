@@ -226,6 +226,7 @@ void OctoPrintClient::getPrinterJobResults() {
   JsonObject& root2 = jsonBuffer2.parseObject(printClient);
   if (!root2.success()) {
     printerData.isPrinting = false;
+    printerData.isPaused = false;
     printerData.toolTemp = "";
     printerData.toolTargetTemp = "";
     printerData.bedTemp = "";
@@ -234,7 +235,8 @@ void OctoPrintClient::getPrinterJobResults() {
   }
 
   String printing = (const char*)root2["state"]["flags"]["printing"];
-  if (printing == "true") {
+  String paused = (const char*)root2["state"]["flags"]["paused"];
+  if (printing == "true" || paused == "true") {
     printerData.isPrinting = true;
   } else {
     printerData.isPrinting = false;
@@ -401,6 +403,14 @@ boolean OctoPrintClient::isOperational() {
     operational = true;
   }
   return operational;
+}
+
+boolean OctoPrintClient::isPaused() {
+  boolean paused = false;
+  if (printerData.state == "Paused") {
+    paused = true;
+  }
+  return paused;
 }
 
 String OctoPrintClient::getTempBedActual() {

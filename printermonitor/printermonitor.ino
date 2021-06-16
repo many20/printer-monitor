@@ -1124,11 +1124,18 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     display->drawString(39, 54, ampm);
   }
 
+  if (printerClient.isPaused()) {
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    String paused = "Paused";
+    display->drawString(64, 51, paused);
+  }
+  else {
   display->setFont(ArialMT_Plain_16);
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   String percent = String(printerClient.getProgressCompletion()) + "%";
   display->drawString(64, 48, percent);
-  
+  }
   // Draw indicator to show next update
   int updatePos = (printerClient.getProgressCompletion().toFloat() / float(100)) * 128;
   display->drawRect(0, 41, 128, 6);
