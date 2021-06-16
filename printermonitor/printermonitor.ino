@@ -1117,7 +1117,8 @@ String zeroPad(int value) {
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setColor(WHITE);
   display->setFont(ArialMT_Plain_16);
-  String displayTime = timeClient.getAmPmHours() + ":" + timeClient.getMinutes();
+  int ampmhours = timeClient.getAmPmHours().toInt();
+  String displayTime = String(zeroPad(ampmhours)) + ":" + timeClient.getMinutes();
   if (IS_24HOUR) {
     displayTime = timeClient.getHours() + ":" + timeClient.getMinutes();
   }
@@ -1127,7 +1128,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   if (!IS_24HOUR) {
     String ampm = timeClient.getAmPm();
     display->setFont(ArialMT_Plain_10);
-    display->drawString(39, 54, ampm);
+    display->drawString(41, 53, ampm);
   }
 
   if (printerClient.isPaused()) {
