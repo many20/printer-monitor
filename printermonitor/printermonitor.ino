@@ -124,6 +124,7 @@ static const char CLOCK_FORM[] PROGMEM = "<hr><p><input name='isClockEnabled' cl
                             
 static const char THEME_FORM[] PROGMEM = "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPTIONS%</select></p>"
                       "<p><label>UTC Time Offset</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='utcoffset' value='%UTCOFFSET%' maxlength='12'></p><hr>"
+    "<p><label>Display Brightness</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='disbright' value='%DISBRIGHT%' maxlength='5'></p>"
                       "<p><input name='isBasicAuth' class='w3-check w3-margin-top' type='checkbox' %IS_BASICAUTH_CHECKED%> Use Security Credentials for Configuration Changes</p>"
                       "<p><label>User ID (for this interface)</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='userid' value='%USERID%' maxlength='20'></p>"
                       "<p><label>Password </label><input class='w3-input w3-border w3-margin-bottom' type='password' name='stationpassword' value='%STATIONPASSWORD%'></p>"
@@ -381,6 +382,9 @@ void loop() {
     getUpdateTime();
   }
 
+  // Set the brightness of the display from configured value
+  display.setBrightness(disBright);
+
   if (lastMinute != timeClient.getMinutes() && !printerClient.isPrinting()) {
     // Check status every 60 seconds
     ledOnOff(true);
@@ -485,6 +489,7 @@ void handleUpdateConfig() {
   minutesBetweenDataRefresh = server.arg("refresh").toInt();
   themeColor = server.arg("theme");
   UtcOffset = server.arg("utcoffset").toFloat();
+  disBright = server.arg("disbright").toInt();
   String temp = server.arg("userid");
   temp.toCharArray(www_username, sizeof(temp));
   temp = server.arg("stationpassword");
@@ -666,6 +671,7 @@ void handleConfigure() {
   themeOptions.replace(">" + String(themeColor) + "<", " selected>" + String(themeColor) + "<");
   form.replace("%THEME_OPTIONS%", themeOptions);
   form.replace("%UTCOFFSET%", String(UtcOffset));
+  form.replace("%DISBRIGHT%", String(disBright));
   String isUseSecurityChecked = "";
   if (IS_BASIC_AUTH) {
     isUseSecurityChecked = "checked='checked'";
@@ -1210,6 +1216,7 @@ void writeSettings() {
   } else {
     Serial.println("Saving settings now...");
     f.println("UtcOffset=" + String(UtcOffset));
+    f.println("disBright=" + String(disBright));
     f.println("printerApiKey=" + PrinterApiKey);
     f.println("printerHostName=" + PrinterHostName);
     f.println("printerServer=" + PrinterServer);
@@ -1252,6 +1259,10 @@ void readSettings() {
     if (line.indexOf("UtcOffset=") >= 0) {
       UtcOffset = line.substring(line.lastIndexOf("UtcOffset=") + 10).toFloat();
       Serial.println("UtcOffset=" + String(UtcOffset));
+    }
+    if (line.indexOf("disBright=") >= 0) {
+      disBright = line.substring(line.lastIndexOf("disBright=") + 10).toInt();
+      Serial.println("disBright=" + String(disBright));
     }
     if (line.indexOf("printerApiKey=") >= 0) {
       PrinterApiKey = line.substring(line.lastIndexOf("printerApiKey=") + 14);
