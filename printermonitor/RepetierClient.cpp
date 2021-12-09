@@ -39,7 +39,7 @@ void RepetierClient::updatePrintClient(String ApiKey, String server, int port, S
   if (user != "") {
     String userpass = user + ":" + pass;
     base64 b64;
-    encodedAuth = b64.encode(userpass, true);
+    encodedAuth = b64.encode(userpass);
   }
   pollPsu = psu;
 }

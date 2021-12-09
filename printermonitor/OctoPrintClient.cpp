@@ -38,7 +38,7 @@ void OctoPrintClient::updatePrintClient(String ApiKey, String server, int port, 
   if (user != "") {
     String userpass = user + ":" + pass;
     base64 b64;
-    encodedAuth = b64.encode(userpass, true);
+    encodedAuth = b64.encode(userpass);
   }
   pollPsu = psu;
 }
@@ -47,10 +47,10 @@ boolean OctoPrintClient::validate() {
   boolean rtnValue = false;
   printerData.error = "";
   if (String(myServer) == "") {
-    printerData.error += "Server address is required; ";
+    printerData.error += "Server address is required";
   }
   if (myApiKey == "") {
-    printerData.error += "ApiKey is required; ";
+    printerData.error += "ApiKey is required";
   }
   if (printerData.error == "") {
     rtnValue = true;

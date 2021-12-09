@@ -38,12 +38,28 @@ SOFTWARE.
  * the Web Interface.
  ******************************************************************************/
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+#ifdef ESP8266
+
+  #include <ESP8266WiFi.h>
+  #include <ESP8266WebServer.h>
+  #include <ESP8266mDNS.h>
+  #include <ESP8266HTTPUpdateServer.h>
+
+#elif defined(ESP32)
+
+  #include <WiFi.h>
+  #include <WebServer.h>
+  
+  #include <esp_wifi.h>  
+  #include <Update.h>
+
+  #include <ESPmDNS.h>
+  #include <HTTPUpdateServer.h>
+
+#endif
+
 #include <WiFiManager.h>
-#include <ESP8266mDNS.h>
 #include <ArduinoOTA.h>
-#include <ESP8266HTTPUpdateServer.h>
 #include "TimeClient.h"
 #include "RepetierClient.h"
 #include "OctoPrintClient.h"
@@ -80,8 +96,8 @@ String WeatherLanguage = "en";  //Default (en) English
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
 const boolean WEBSERVER_ENABLED = true;  // Device will provide a web interface via http://[ip]:[port]/
 boolean IS_BASIC_AUTH = true;  // true = require athentication to change configuration settings / false = no auth
-char* www_username = "admin";  // User account for the Web Interface
-char* www_password = "password";  // Password for the Web Interface
+char* www_username = (char*)"admin";  // User account for the Web Interface
+char* www_password = (char*)"password";  // Password for the Web Interface
 
 // Date and Time
 float UtcOffset = -7; // Hour offset from GMT for your timezone
@@ -91,8 +107,8 @@ boolean DISPLAYCLOCK = true;   // true = Show Clock when not printing / false = 
 
 // Display Settings
 const int I2C_DISPLAY_ADDRESS = 0x3c; // I2C Address of your Display (usually 0x3c or 0x3d)
-const int SDA_PIN = D2;
-const int SCL_PIN = D5; // original code D5 -- Monitor Easy Board use D1
+const int SDA_PIN = SDA_PIN; // original code D2
+const int SCL_PIN = SCL_PIN; // original code D5 -- Monitor Easy Board use D1
 boolean INVERT_DISPLAY = false; // true = pins at top | false = pins at the bottom
 //#define DISPLAY_SH1106       // Uncomment this line to use the SH1106 display -- SSD1306 is used by default and is most common
 

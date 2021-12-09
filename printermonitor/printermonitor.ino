@@ -99,8 +99,19 @@ OpenWeatherMapClient weatherClient(WeatherApiKey, CityIDs, 1, IS_METRIC, Weather
 void configModeCallback (WiFiManager *myWiFiManager);
 int8_t getWifiQuality();
 
+
+#ifdef ESP8266
+
 ESP8266WebServer server(WEBSERVER_PORT);
 ESP8266HTTPUpdateServer serverUpdater;
+
+#elif defined(ESP32)
+
+WebServer server(WEBSERVER_PORT);
+HTTPUpdateServer serverUpdater;
+
+#endif
+
 
 static const char WEB_ACTIONS[] PROGMEM =  "<a class='w3-bar-item w3-button' href='/'><i class='fa fa-home'></i> Home</a>"
                       "<a class='w3-bar-item w3-button' href='/configure'><i class='fa fa-cog'></i> Configure</a>"
@@ -242,11 +253,22 @@ void setup() {
   wifiManager.setAPCallback(configModeCallback);
   
   String hostname(HOSTNAME);
+
+#ifdef ESP8266
   hostname += String(ESP.getChipId(), HEX);
+#elif defined(ESP32)
+  //https://github.com/espressif/arduino-esp32/blob/master/libraries/ESP32/examples/ChipID/GetChipID/GetChipID.ino
+  uint32_t chipId = 0;
+  for(int i=0; i<17; i=i+8) {
+    chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
+  }
+  hostname += String(chipId, HEX);
+#endif 
+  
   if (!wifiManager.autoConnect((const char *)hostname.c_str())) {// new addition
     delay(3000);
     WiFi.disconnect(true);
-    ESP.reset();
+    ESP.restart();//ESP.reset();
     delay(5000);
   }
   

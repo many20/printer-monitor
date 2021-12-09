@@ -29,7 +29,12 @@ Modified by David Payne for use in the Scrolling Marquee
 
 #pragma once
 
-#include <ESP8266WiFi.h>
+#ifdef ESP8266
+  #include <ESP8266WiFi.h>
+#elif defined(ESP32)
+  #include <WiFi.h>
+  #include <esp_wifi.h>  
+#endif
 
 #define NTP_PACKET_SIZE 48
 
@@ -59,4 +64,3 @@ class TimeClient {
     long getCurrentEpochWithUtcOffset();
 
 };
-
