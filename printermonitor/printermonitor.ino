@@ -201,11 +201,12 @@ static const char COLOR_THEMES[] PROGMEM = "<option>red</option>"
                             
 
 void setup() {
-  // Play a test beep
-  tone(D6, 450);
-  delay(250);
-  noTone(D6);
-  
+  if (USE_BUZZER) {
+    // Play a test beep
+    tone(BUZZER_PIN, 450);
+    delay(250);
+    noTone(BUZZER_PIN);
+  }
   Serial.begin(115200);
   LittleFS.begin();
   delay(10);

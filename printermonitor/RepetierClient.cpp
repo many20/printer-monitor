@@ -178,6 +178,16 @@ void RepetierClient::getPrinterJobResults() {
   if (printerData.fileName != "none") {
     printerData.isPrinting = true;
   } else {
+    if (USE_BUZZER && printerData.isPrinting) {
+      // Print complete chime
+      tone(BUZZER_PIN, 450);
+      delay(250);
+      noTone(BUZZER_PIN);
+      delay(250);
+      tone(BUZZER_PIN, 450);
+      delay(250);
+      noTone(BUZZER_PIN);
+    }
     printerData.isPrinting = false;
   }
 

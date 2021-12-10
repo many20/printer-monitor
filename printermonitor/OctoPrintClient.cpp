@@ -239,15 +239,15 @@ void OctoPrintClient::getPrinterJobResults() {
   if (printing == "true" || paused == "true") {
     printerData.isPrinting = true;
   } else {
-    if (printerData.isPrinting) {
+    if (USE_BUZZER && printerData.isPrinting) {
       // Print complete chime
-      tone(D6, 450);
+      tone(BUZZER_PIN, 450);
       delay(250);
-      noTone(D6);
+      noTone(BUZZER_PIN);
       delay(250);
-      tone(D6, 450);
+      tone(BUZZER_PIN, 450);
       delay(250);
-      noTone(D6);
+      noTone(BUZZER_PIN);
     }
     printerData.isPrinting = false;
   }

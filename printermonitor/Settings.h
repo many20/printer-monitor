@@ -81,8 +81,8 @@ String WeatherLanguage = "en";  //Default (en) English
 const int WEBSERVER_PORT = 80; // The port you can access this device on over HTTP
 const boolean WEBSERVER_ENABLED = true;  // Device will provide a web interface via http://[ip]:[port]/
 boolean IS_BASIC_AUTH = true;  // true = require athentication to change configuration settings / false = no auth
-char* www_username = "admin";  // User account for the Web Interface
-char* www_password = "password";  // Password for the Web Interface
+char* www_username = (char*)"admin";  // User account for the Web Interface
+char* www_password = (char*)"password";  // Password for the Web Interface
 
 // Date and Time
 float UtcOffset = -7; // Hour offset from GMT for your timezone
@@ -108,6 +108,10 @@ boolean HAS_PSU = false; // Set to true if https://github.com/kantlivelong/OctoP
 // OTA Updates
 boolean ENABLE_OTA = true;     // this will allow you to load firmware to the device over WiFi (see OTA for ESP8266)
 String OTA_Password = "";      // Set an OTA password here -- leave blank if you don't want to be prompted for password
+
+// BUZZER
+boolean USE_BUZZER = true;
+const int BUZZER_PIN = D6;
 
 //******************************
 // End Settings
