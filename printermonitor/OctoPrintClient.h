@@ -66,6 +66,7 @@ private:
     String bedTemp;
     String bedTargetTemp;
     boolean isPrinting;
+    boolean isPaused;
     boolean isPSUoff;
     String error;
     String printerName;
@@ -91,6 +92,7 @@ public:
   String getProgressPrintTimeLeft();
   String getState();
   boolean isPrinting();
+  boolean isPaused();
   boolean isOperational();
   boolean isPSUoff();
   String getTempBedActual();

@@ -25,7 +25,7 @@ SOFTWARE.
 /* 15 Jan 2019 : Owen Carter : Add psucontrol option and processing */
 
  /**********************************************
- * Edit Settings.h for personalization
+  Edit Settings.h for personalization
  ***********************************************/
 
 #include "Settings.h"
@@ -122,8 +122,9 @@ static const char CLOCK_FORM[] PROGMEM = "<hr><p><input name='isClockEnabled' cl
                       "<p><input name='hasPSU' class='w3-check w3-margin-top' type='checkbox' %HAS_PSU_CHECKED%> Use OctoPrint PSU control plugin for clock/blank</p>"
                       "<p>Clock Sync / Weather Refresh (minutes) <select class='w3-option w3-padding' name='refresh'>%OPTIONS%</select></p>";
                             
-static const char THEME_FORM[] PROGMEM =   "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPTIONS%</select></p>"
+static const char THEME_FORM[] PROGMEM = "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPTIONS%</select></p>"
                       "<p><label>UTC Time Offset</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='utcoffset' value='%UTCOFFSET%' maxlength='12'></p><hr>"
+    "<p><label>Display Brightness</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='disbright' value='%DISBRIGHT%' maxlength='5'></p>"
                       "<p><input name='isBasicAuth' class='w3-check w3-margin-top' type='checkbox' %IS_BASICAUTH_CHECKED%> Use Security Credentials for Configuration Changes</p>"
                       "<p><label>User ID (for this interface)</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='userid' value='%USERID%' maxlength='20'></p>"
                       "<p><label>Password </label><input class='w3-input w3-border w3-margin-bottom' type='password' name='stationpassword' value='%STATIONPASSWORD%'></p>"
@@ -382,9 +383,12 @@ void findMDNS() {
 void loop() {
   
    //Get Time Update
-  if((getMinutesFromLastRefresh() >= minutesBetweenDataRefresh) || lastEpoch == 0) {
+  if ((getMinutesFromLastRefresh() >= minutesBetweenDataRefresh) || lastEpoch == 0) {
     getUpdateTime();
   }
+
+  // Set the brightness of the display from configured value
+  display.setBrightness(disBright);
 
   if (lastMinute != timeClient.getMinutes() && !printerClient.isPrinting()) {
     // Check status every 60 seconds
@@ -490,6 +494,7 @@ void handleUpdateConfig() {
   minutesBetweenDataRefresh = server.arg("refresh").toInt();
   themeColor = server.arg("theme");
   UtcOffset = server.arg("utcoffset").toFloat();
+  disBright = server.arg("disbright").toInt();
   String temp = server.arg("userid");
   temp.toCharArray(www_username, sizeof(temp));
   temp = server.arg("stationpassword");
@@ -500,7 +505,7 @@ void handleUpdateConfig() {
   printerClient.getPrinterPsuState();
   if (INVERT_DISPLAY != flipOld) {
     ui.init();
-    if(INVERT_DISPLAY)     
+    if (INVERT_DISPLAY)
       display.flipScreenVertically();
     ui.update();
   }
@@ -552,7 +557,7 @@ void handleWeatherConfigure() {
   }
   form.replace("%METRIC%", checked);
   String options = FPSTR(LANG_OPTIONS);
-  options.replace(">"+String(WeatherLanguage)+"<", " selected>"+String(WeatherLanguage)+"<");
+  options.replace(">" + String(WeatherLanguage) + "<", " selected>" + String(WeatherLanguage) + "<");
   form.replace("%LANGUAGEOPTIONS%", options);
   server.sendContent(form);
   
@@ -660,8 +665,8 @@ void handleConfigure() {
   }
   form.replace("%HAS_PSU_CHECKED%", hasPSUchecked);
   
-  String options = "<option>10</option><option>15</option><option>20</option><option>30</option><option>60</option>";
-  options.replace(">"+String(minutesBetweenDataRefresh)+"<", " selected>"+String(minutesBetweenDataRefresh)+"<");
+  String options = "<option>5</option><option>10</option><option>15</option><option>20</option><option>30</option><option>60</option>";
+  options.replace(">" + String(minutesBetweenDataRefresh) + "<", " selected>" + String(minutesBetweenDataRefresh) + "<");
   form.replace("%OPTIONS%", options);
 
   server.sendContent(form);
@@ -669,9 +674,10 @@ void handleConfigure() {
   form = FPSTR(THEME_FORM);
   
   String themeOptions = FPSTR(COLOR_THEMES);
-  themeOptions.replace(">"+String(themeColor)+"<", " selected>"+String(themeColor)+"<");
+  themeOptions.replace(">" + String(themeColor) + "<", " selected>" + String(themeColor) + "<");
   form.replace("%THEME_OPTIONS%", themeOptions);
   form.replace("%UTCOFFSET%", String(UtcOffset));
+  form.replace("%DISBRIGHT%", String(disBright));
   String isUseSecurityChecked = "";
   if (IS_BASIC_AUTH) {
     isUseSecurityChecked = "checked='checked'";
@@ -1117,7 +1123,8 @@ String zeroPad(int value) {
 void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   display->setColor(WHITE);
   display->setFont(ArialMT_Plain_16);
-  String displayTime = timeClient.getAmPmHours() + ":" + timeClient.getMinutes();
+  int ampmhours = timeClient.getAmPmHours().toInt();
+  String displayTime = String(zeroPad(ampmhours)) + ":" + timeClient.getMinutes();
   if (IS_24HOUR) {
     displayTime = timeClient.getHours() + ":" + timeClient.getMinutes();
   }
@@ -1127,14 +1134,21 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   if (!IS_24HOUR) {
     String ampm = timeClient.getAmPm();
     display->setFont(ArialMT_Plain_10);
-    display->drawString(39, 54, ampm);
+    display->drawString(41, 53, ampm);
   }
 
-  display->setFont(ArialMT_Plain_16);
-  display->setTextAlignment(TEXT_ALIGN_LEFT);
-  String percent = String(printerClient.getProgressCompletion()) + "%";
-  display->drawString(64, 48, percent);
-  
+  if (printerClient.isPaused()) {
+    display->setFont(ArialMT_Plain_10);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    String paused = "Paused";
+    display->drawString(64, 51, paused);
+  }
+  else {
+    display->setFont(ArialMT_Plain_16);
+    display->setTextAlignment(TEXT_ALIGN_LEFT);
+    String percent = String(printerClient.getProgressCompletion()) + "%";
+    display->drawString(64, 48, percent);
+  }
   // Draw indicator to show next update
   int updatePos = (printerClient.getProgressCompletion().toFloat() / float(100)) * 128;
   display->drawRect(0, 41, 128, 6);
@@ -1191,9 +1205,9 @@ void drawRssi(OLEDDisplay *display) {
 // converts the dBm to a range between 0 and 100%
 int8_t getWifiQuality() {
   int32_t dbm = WiFi.RSSI();
-  if(dbm <= -100) {
+  if (dbm <= -100) {
       return 0;
-  } else if(dbm >= -50) {
+  } else if (dbm >= -50) {
       return 100;
   } else {
       return 2 * (dbm + 100);
@@ -1209,6 +1223,7 @@ void writeSettings() {
   } else {
     Serial.println("Saving settings now...");
     f.println("UtcOffset=" + String(UtcOffset));
+    f.println("disBright=" + String(disBright));
     f.println("printerApiKey=" + PrinterApiKey);
     f.println("printerHostName=" + PrinterHostName);
     f.println("printerServer=" + PrinterServer);
@@ -1245,12 +1260,16 @@ void readSettings() {
   }
   File fr = LittleFS.open(CONFIG, "r");
   String line;
-  while(fr.available()) {
+  while (fr.available()) {
     line = fr.readStringUntil('\n');
 
     if (line.indexOf("UtcOffset=") >= 0) {
       UtcOffset = line.substring(line.lastIndexOf("UtcOffset=") + 10).toFloat();
       Serial.println("UtcOffset=" + String(UtcOffset));
+    }
+    if (line.indexOf("disBright=") >= 0) {
+      disBright = line.substring(line.lastIndexOf("disBright=") + 10).toInt();
+      Serial.println("disBright=" + String(disBright));
     }
     if (line.indexOf("printerApiKey=") >= 0) {
       PrinterApiKey = line.substring(line.lastIndexOf("printerApiKey=") + 14);
@@ -1320,11 +1339,11 @@ void readSettings() {
       IS_24HOUR = line.substring(line.lastIndexOf("is24hour=") + 9).toInt();
       Serial.println("IS_24HOUR=" + String(IS_24HOUR));
     }
-    if(line.indexOf("invertDisp=") >= 0) {
+    if (line.indexOf("invertDisp=") >= 0) {
       INVERT_DISPLAY = line.substring(line.lastIndexOf("invertDisp=") + 11).toInt();
       Serial.println("INVERT_DISPLAY=" + String(INVERT_DISPLAY));
     }
-    if(line.indexOf("USE_FLASH=") >= 0) {
+    if (line.indexOf("USE_FLASH=") >= 0) {
       USE_FLASH = line.substring(line.lastIndexOf("USE_FLASH=") + 10).toInt();
       Serial.println("USE_FLASH=" + String(USE_FLASH));
     }
