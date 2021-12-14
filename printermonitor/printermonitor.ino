@@ -54,6 +54,7 @@ SOFTWARE.
 
 OLEDDisplayUi   ui( &display );
 
+
 void drawProgress(OLEDDisplay *display, int percentage, String label);
 void drawOtaProgress(unsigned int, unsigned int);
 void drawScreen1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y);
@@ -124,7 +125,9 @@ static const char CLOCK_FORM[] PROGMEM = "<hr><p><input name='isClockEnabled' cl
                             
 static const char THEME_FORM[] PROGMEM = "<p>Theme Color <select class='w3-option w3-padding' name='theme'>%THEME_OPTIONS%</select></p>"
                       "<p><label>UTC Time Offset</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='utcoffset' value='%UTCOFFSET%' maxlength='12'></p><hr>"
-    "<p><label>Display Brightness</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='disbright' value='%DISBRIGHT%' maxlength='5'></p>"
+#ifdef USE_BRIGHTNESS
+                      "<p><label>Display Brightness</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='disbright' value='%DISBRIGHT%' maxlength='5'></p>"
+#endif
                       "<p><input name='isBasicAuth' class='w3-check w3-margin-top' type='checkbox' %IS_BASICAUTH_CHECKED%> Use Security Credentials for Configuration Changes</p>"
                       "<p><label>User ID (for this interface)</label><input class='w3-input w3-border w3-margin-bottom' type='text' name='userid' value='%USERID%' maxlength='20'></p>"
                       "<p><label>Password </label><input class='w3-input w3-border w3-margin-bottom' type='password' name='stationpassword' value='%STATIONPASSWORD%'></p>"
@@ -201,12 +204,9 @@ static const char COLOR_THEMES[] PROGMEM = "<option>red</option>"
                             
 
 void setup() {
-  if (USE_BUZZER) {
-    // Play a test beep
-    tone(BUZZER_PIN, 450);
-    delay(250);
-    noTone(BUZZER_PIN);
-  }
+  // Play a test beep
+  //buzzerTone(1);
+
   Serial.begin(115200);
   LittleFS.begin();
   delay(10);
@@ -242,7 +242,7 @@ void setup() {
   display.drawString(64, 30, "By Qrome");
   display.drawString(64, 46, "V" + String(VERSION));
   display.display();
- 
+  
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wifiManager;
@@ -388,8 +388,10 @@ void loop() {
     getUpdateTime();
   }
 
+#ifdef USE_BRIGHTNESS
   // Set the brightness of the display from configured value
   display.setBrightness(disBright);
+#endif
 
   if (lastMinute != timeClient.getMinutes() && !printerClient.isPrinting()) {
     // Check status every 60 seconds
@@ -495,7 +497,9 @@ void handleUpdateConfig() {
   minutesBetweenDataRefresh = server.arg("refresh").toInt();
   themeColor = server.arg("theme");
   UtcOffset = server.arg("utcoffset").toFloat();
+#ifdef USE_BRIGHTNESS
   disBright = server.arg("disbright").toInt();
+#endif
   String temp = server.arg("userid");
   temp.toCharArray(www_username, sizeof(temp));
   temp = server.arg("stationpassword");
@@ -678,7 +682,9 @@ void handleConfigure() {
   themeOptions.replace(">" + String(themeColor) + "<", " selected>" + String(themeColor) + "<");
   form.replace("%THEME_OPTIONS%", themeOptions);
   form.replace("%UTCOFFSET%", String(UtcOffset));
+#ifdef USE_BRIGHTNESS
   form.replace("%DISBRIGHT%", String(disBright));
+#endif
   String isUseSecurityChecked = "";
   if (IS_BASIC_AUTH) {
     isUseSecurityChecked = "checked='checked'";
@@ -932,6 +938,17 @@ void flashLED(int number, int delayTime) {
   }
 }
 
+void buzzerTone(int count) {
+  if (USE_BUZZER) {
+    for (int inx = 0; inx <= count; inx++) {
+      tone(BUZZER_PIN, 450);
+      delay(250);
+      noTone(BUZZER_PIN);
+      delay(250);
+    }
+  }
+}
+
 void drawScreen1(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int16_t y) {
   String bed = printerClient.getValueRounded(printerClient.getTempBedActual());
   String tool = printerClient.getValueRounded(printerClient.getTempToolActual());
@@ -1138,6 +1155,7 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     display->drawString(41, 53, ampm);
   }
 
+#ifndef USE_REPETIER_CLIENT
   if (printerClient.isPaused()) {
     display->setFont(ArialMT_Plain_10);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
@@ -1145,11 +1163,15 @@ void drawHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
     display->drawString(64, 51, paused);
   }
   else {
+#endif
     display->setFont(ArialMT_Plain_16);
     display->setTextAlignment(TEXT_ALIGN_LEFT);
     String percent = String(printerClient.getProgressCompletion()) + "%";
     display->drawString(64, 48, percent);
+#ifndef USE_REPETIER_CLIENT
   }
+#endif
+  
   // Draw indicator to show next update
   int updatePos = (printerClient.getProgressCompletion().toFloat() / float(100)) * 128;
   display->drawRect(0, 41, 128, 6);
@@ -1186,13 +1208,11 @@ void drawClockHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state) {
   }
   display->setTextAlignment(TEXT_ALIGN_LEFT);
   display->drawRect(0, 43, 128, 2);
- 
+  
   drawRssi(display);
 }
 
-void drawRssi(OLEDDisplay *display) {
-
- 
+void drawRssi(OLEDDisplay *display) { 
   int8_t quality = getWifiQuality();
   for (int8_t i = 0; i < 4; i++) {
     for (int8_t j = 0; j < 3 * (i + 2); j++) {
@@ -1224,7 +1244,9 @@ void writeSettings() {
   } else {
     Serial.println("Saving settings now...");
     f.println("UtcOffset=" + String(UtcOffset));
+#ifdef USE_BRIGHTNESS
     f.println("disBright=" + String(disBright));
+#endif
     f.println("printerApiKey=" + PrinterApiKey);
     f.println("printerHostName=" + PrinterHostName);
     f.println("printerServer=" + PrinterServer);
@@ -1268,10 +1290,12 @@ void readSettings() {
       UtcOffset = line.substring(line.lastIndexOf("UtcOffset=") + 10).toFloat();
       Serial.println("UtcOffset=" + String(UtcOffset));
     }
+#ifdef USE_BRIGHTNESS
     if (line.indexOf("disBright=") >= 0) {
       disBright = line.substring(line.lastIndexOf("disBright=") + 10).toInt();
       Serial.println("disBright=" + String(disBright));
     }
+#endif
     if (line.indexOf("printerApiKey=") >= 0) {
       PrinterApiKey = line.substring(line.lastIndexOf("printerApiKey=") + 14);
       PrinterApiKey.trim();

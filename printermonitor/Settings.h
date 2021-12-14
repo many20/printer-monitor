@@ -91,7 +91,10 @@ int minutesBetweenDataRefresh = 15;
 boolean DISPLAYCLOCK = true;   // true = Show Clock when not printing / false = turn off display when not printing
 
 // Display Settings
-int disBright = 255; //Set brightness of the display (1-255)
+//#define USE_BRIGHTNESS
+#ifdef USE_BRIGHTNESS
+    int disBright = 254; //Set brightness of the display (1-255)
+#endif
 const int I2C_DISPLAY_ADDRESS = 0x3c; // I2C Address of your Display (usually 0x3c or 0x3d)
 const int SDA_PIN = D2;
 const int SCL_PIN = D5; // original code D5 -- Monitor Easy Board use D1
