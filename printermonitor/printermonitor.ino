@@ -69,7 +69,7 @@ void drawUpdate(OLEDDisplay *display, OLEDDisplayUiState* state, int16_t x, int1
 void drawClockHeaderOverlay(OLEDDisplay *display, OLEDDisplayUiState* state);
 
 // Set the number of Frames supported
-const int numberOfFrames = 5;
+const int numberOfFrames = 3; //5;
 FrameCallback frames[numberOfFrames];
 FrameCallback clockFrame[3];
 boolean isClockOn = false;
@@ -205,7 +205,9 @@ static const char COLOR_THEMES[] PROGMEM = "<option>red</option>"
 
 void setup() {
   // Play a test beep
-  //buzzerTone(1);
+  buzzerTone(1);
+
+  printerClient.setPrintFinishCallback(printFinishCallback);
 
   Serial.begin(115200);
   LittleFS.begin();
@@ -269,8 +271,8 @@ void setup() {
   frames[0] = drawScreen1;
   frames[1] = drawScreen2;
   frames[2] = drawScreen3;
-  frames[3] = drawScreen4;
-  frames[4] = drawScreen5;
+  //frames[3] = drawScreen4;
+  //frames[4] = drawScreen5;
   clockFrame[0] = drawClock;
   clockFrame[1] = drawWeather;
   clockFrame[2] = drawUpdate;
@@ -916,6 +918,10 @@ void configModeCallback (WiFiManager *myWiFiManager) {
   Serial.println(myWiFiManager->getConfigPortalSSID());
   Serial.println("To setup Wifi Configuration");
   flashLED(20, 50);
+}
+
+void printFinishCallback() {
+  buzzerTone(2);
 }
 
 void ledOnOff(boolean value) {

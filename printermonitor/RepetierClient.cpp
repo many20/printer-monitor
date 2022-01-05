@@ -120,7 +120,7 @@ void RepetierClient::getPrinterJobResults() {
     return;
   }
   //**** get the Printer Job status
-  String apiGetData = "GET /printer/api/?a=listPrinter&apikey=" + myApiKey;
+  String apiGetData = "GET /printer/api/?a=listPrinter&apikey=" + myApiKey + " HTTP/1.1";
   WiFiClient printClient = getSubmitRequest(apiGetData);
   if (printerData.error != "") {
     return;
@@ -179,8 +179,10 @@ void RepetierClient::getPrinterJobResults() {
     printerData.isPrinting = true;
   } else {
     if (printerData.isPrinting) {
-      // Print complete chime
-      //buzzerTone(2);
+       // Print complete chime
+      if (_printFinishCallback != NULL) {
+        _printFinishCallback();
+      }
     }
     printerData.isPrinting = false;
   }
@@ -196,7 +198,7 @@ void RepetierClient::getPrinterJobResults() {
   }
 
   //**** get the Printer Temps and Stat
-  apiGetData = "GET /printer/api/?a=stateList&apikey=" + myApiKey;
+  apiGetData = "GET /printer/api/?a=stateList&apikey=" + myApiKey + " HTTP/1.1";
   printClient = getSubmitRequest(apiGetData);
   if (printerData.error != "") {
     return;
@@ -224,6 +226,9 @@ void RepetierClient::getPrinterJobResults() {
   printerData.bedTemp = (const char*) pr2["heatedBeds"][0]["tempRead"];
   printerData.bedTargetTemp = (const char*) pr2["heatedBeds"][0]["tempSet"];
 
+/*
+  //TODO: implement it with the right http call
+  
   // Layer & Endtime
   apiGetData = "GET /plugin/DisplayLayerProgress/values HTTP/1.1";
   printClient = getSubmitRequest(apiGetData);
@@ -238,12 +243,14 @@ void RepetierClient::getPrinterJobResults() {
   if (!root3.success()) {
     printerData.estimatedEndTime = "";
     printerData.currentLayer = "";
+    printerData.totalLayers = "";
     return;
   }
 
   printerData.estimatedEndTime = (const char*)root3["print"]["estimatedEndTime"];
   printerData.currentLayer = (const char*)root3["layer"]["current"];
   printerData.totalLayers = (const char*)root3["layer"]["total"];
+*/
 
   if (printerData.isPrinting) {
     Serial.println("Status: " + printerData.state + " " + printerData.fileName + "(" + printerData.progressCompletion + "%)");
@@ -404,4 +411,8 @@ String RepetierClient::getPrinterName() {
 
 void RepetierClient::setPrinterName(String printer) {
   printerData.printerName = printer;
+}
+
+void RepetierClient::setPrintFinishCallback( void (*func)() ) {
+  _printFinishCallback = func;
 }
